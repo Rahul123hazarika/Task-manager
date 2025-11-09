@@ -1,119 +1,124 @@
-/* src/components/Common/AIChatBot.css */
-.chatbot-wrapper {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  font-family: Arial, sans-serif;
-}
+// src/components/Common/AIChatBot.jsx
+import React, { useState } from 'react';
+import './AIChatBot.css';
+import { FiSend, FiX, FiMessageCircle } from 'react-icons/fi';
 
-.chatbot-toggle-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
+const AIChatBot = () => {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
 
-.chatbot-container {
-  width: 350px;
-  max-height: 450px;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
+  const toggleChat = () => setOpen(!open);
 
-.chatbot-header {
-  background-color: #007bff;
-  color: white;
-  padding: 12px;
-  font-weight: bold;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  // Prebuilt Q&A
+  const qaPairs = [
+    {
+      question: 'How to create a new task?',
+      answer: 'Click on "+ New Task" button in your dashboard, fill in details, and save.'
+    },
+    {
+      question: 'How to mark a task as completed?',
+      answer: 'Click the edit button on the task and change its status to Completed.'
+    },
+    {
+      question: 'Can I filter tasks by priority?',
+      answer: 'Yes! Use the priority dropdown above the task list to filter tasks.'
+    },
+    {
+      question: 'How to delete a task?',
+      answer: 'Click the trash icon on the task you want to remove and confirm deletion.'
+    },
+    {
+      question: 'Can I switch between light and dark mode?',
+      answer: 'Yes! Use the toggle button in the navbar to switch themes.'
+    }
+  ];
 
-.close-btn {
-  background: transparent;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 18px;
-}
+  const handleSend = () => {
+    if (!input.trim()) return;
 
-.chatbot-messages {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+    const userMessage = { type: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
 
-.chatbot-message {
-  padding: 10px 14px;
-  border-radius: 20px;
-  max-width: 80%;
-  word-wrap: break-word;
-}
+    // Find prebuilt answer
+    const matched = qaPairs.find(q =>
+      input.toLowerCase().includes(q.question.toLowerCase())
+    );
 
-.chatbot-message.user {
-  align-self: flex-end;
-  background-color: #007bff;
-  color: white;
-}
+    const botMessage = {
+      type: 'bot',
+      text: matched ? matched.answer : "Sorry, I don't understand. Try one of the suggested questions."
+    };
 
-.chatbot-message.bot {
-  align-self: flex-start;
-  background-color: #f1f1f1;
-  color: #333;
-}
+    setTimeout(() => {
+      setMessages(prev => [...prev, botMessage]);
+    }, 500);
+  };
 
-.chatbot-input {
-  display: flex;
-  border-top: 1px solid #ddd;
-}
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') handleSend();
+  };
 
-.chatbot-input input {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  outline: none;
-}
+  const suggestedQuestions = qaPairs.map(q => q.question);
 
-.chatbot-input button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0 18px;
-  cursor: pointer;
-}
+  return (
+    <div className={`chatbot-wrapper ${open ? 'open' : ''}`}>
+      {open ? (
+        <div className="chatbot-container">
+          <div className="chatbot-header">
+            Technical Support
+            <button className="close-btn" onClick={toggleChat}><FiX /></button>
+          </div>
 
-.chatbot-suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-}
+          <div className="chatbot-messages">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`chatbot-message ${msg.type === 'bot' ? 'bot' : 'user'}`}
+              >
+                {msg.text}
+              </div>
+            ))}
 
-.chatbot-suggestion-btn {
-  background-color: #f0f0f0;
-  border: none;
-  border-radius: 18px;
-  padding: 6px 12px;
-  cursor: pointer;
-  text-align: left;
-}
+            {/* Suggested questions */}
+            {messages.length === 0 && (
+              <div className="chatbot-suggestions">
+                <p>Try these questions:</p>
+                {suggestedQuestions.map((q, idx) => (
+                  <button
+                    key={idx}
+                    className="chatbot-suggestion-btn"
+                    onClick={() => {
+                      setInput(q);
+                      handleSend();
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-.chatbot-suggestion-btn:hover {
-  background-color: #d6d6d6;
-}
+          <div className="chatbot-input">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <button onClick={handleSend}><FiSend /></button>
+          </div>
+        </div>
+      ) : (
+        <button className="chatbot-toggle-btn" onClick={toggleChat}>
+          <FiMessageCircle size={28} />
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default AIChatBot;
